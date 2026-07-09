@@ -1,15 +1,15 @@
-import { Handle, Position, NodeToolbar, useReactFlow } from 'reactflow';
+import { Handle, Position, useEdges, NodeToolbar, useReactFlow } from 'reactflow';
 
-// Estilo padrão para os botõezinhos da barra
 const btnStyle = { 
   padding: '5px 8px', cursor: 'pointer', border: 'none', 
   background: 'transparent', color: '#fff', fontSize: '14px', 
   borderRadius: '4px', fontWeight: 'bold' 
 };
 
-// Recebemos a prop 'selected' automaticamente do React Flow quando clicamos nele
-export default function ColaboradorNode({ id, data, selected }: { id: string; data: any; selected?: boolean }) {
+export default function DepartamentoNode({ id, data, selected }: { id: string; data: any; selected?: boolean }) {
+  const edges = useEdges();
   const { setNodes, setEdges, getNode } = useReactFlow();
+  const totalMembros = edges.filter((edge) => edge.source === id).length;
 
   const handleAdd = (type: 'departamento' | 'colaborador') => {
     const currentNode = getNode(id);
@@ -19,15 +19,13 @@ export default function ColaboradorNode({ id, data, selected }: { id: string; da
     const newNode = {
       id: newId,
       type,
-      // Cria o novo nó logo abaixo e um pouco tremido para não encavalarem caso adicione muitos
-      position: { x: currentNode.position.x + (Math.random()*40 - 20), y: currentNode.position.y + 120 },
+      position: { x: currentNode.position.x + (Math.random()*40 - 20), y: currentNode.position.y + 130 },
       data: type === 'colaborador' 
         ? { label: 'Novo Colaborador', cargo: 'Cargo' } 
         : { label: 'Novo Departamento', lider: 'Líder', meta: 'Meta' }
     };
 
-    // Regra mantida: O Departamento é sempre a origem (source) e o Colab o alvo (target)
-    const source = type === 'departamento' ? newId : id;
+    const source = type === 'departamento' ? newId : id; // O Departamento sempre manda
     const target = type === 'departamento' ? id : newId;
     const newEdge = { id: `edge-${source}-${target}`, source, target };
 
@@ -36,26 +34,22 @@ export default function ColaboradorNode({ id, data, selected }: { id: string; da
   };
 
   const handleDelete = () => {
-    // Apaga o nó e limpa qualquer ligação que estivesse conectada a ele
     setNodes((nds) => nds.filter(n => n.id !== id));
     setEdges((eds) => eds.filter(e => e.source !== id && e.target !== id));
   };
 
-  // Dispara um evento para o App.tsx escutar e abrir o Modal
   const handleEdit = () => {
     window.dispatchEvent(new CustomEvent('openNodeEdit', { detail: id }));
   };
 
   return (
     <div style={{
-      background: '#cde2f3', padding: '12px', borderRadius: '8px',
-      // NOVO: Borda fica mais escura se o nó estiver selecionado
-      border: `2px solid ${selected ? '#0056b3' : '#1f77b4'}`, 
-      width: '180px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-      fontFamily: 'sans-serif', textAlign: 'center'
+      background: '#e2f0d9', padding: '12px', borderRadius: '8px',
+      border: `2px solid ${selected ? '#1a751a' : '#2ca02c'}`,
+      width: '200px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+      fontFamily: 'sans-serif'
     }}>
       
-      {/* BARRA DE FERRAMENTAS FLUTUANTE */}
       <NodeToolbar isVisible={selected} position={Position.Top}>
         <div style={{ display: 'flex', gap: '5px', background: '#1e1e24', padding: '6px', borderRadius: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
           <button onClick={() => handleAdd('departamento')} title="Adicionar e Ligar Departamento" style={btnStyle}>🏢+</button>
@@ -67,12 +61,18 @@ export default function ColaboradorNode({ id, data, selected }: { id: string; da
       </NodeToolbar>
 
       <Handle type="target" position={Position.Top} />
-      
-      <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#1f77b4', marginBottom: '4px' }}>
+
+      <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#2ca02c', marginBottom: '6px' }}>
         {data.label}
       </div>
-      <div style={{ fontSize: '12px', color: '#555' }}>
-        {data.cargo || 'Sem cargo'}
+      <div style={{ fontSize: '12px', color: '#333', marginBottom: '2px' }}>
+        <strong>Líder:</strong> {data.lider || 'Não definido'}
+      </div>
+      <div style={{ fontSize: '11px', color: '#666', marginBottom: '8px' }}>
+        <strong>Meta:</strong> {data.meta || 'Sem meta definida'}
+      </div>
+      <div style={{ fontSize: '11px', background: '#2ca02c', color: '#fff', padding: '3px 8px', borderRadius: '4px', display: 'inline-block', fontWeight: 'bold' }}>
+        👥 Membros: {totalMembros}
       </div>
 
       <Handle type="source" position={Position.Bottom} />
